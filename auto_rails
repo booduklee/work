@@ -1,0 +1,101 @@
+#!/bin/bash
+#time 2012-03.31
+# this program is used to auot install rails environment
+# wirtten by yh
+# install REE
+INIT() {
+apt-get update
+apt-get install vim curl git-core build-essential coreutils zlib1g-dev libssl-dev libreadline6-dev libcurl4-openssl-dev  cmake  libmysqlclient15-dev -y
+useradd -s /bin/bash -m railsdeploy
+echo 'railsdeploy:passwd' | chpasswd
+}
+REE () {
+apt-get update
+apt-get install vim curl git-core build-essential coreutils zlib1g-dev libssl-dev libreadline6-dev libcurl4-openssl-dev  cmake -y
+URL=http://rubyenterpriseedition.googlecode.com/files/ruby-enterprise-1.8.7-2012.02.tar.gz
+ruby_ver=$(basename $URL)
+ruby_dir=$(echo ${ruby_ver} | awk -F. 'BEGIN{OFS="."}NF-=2' )
+PREFIX=/usr/local/ruby
+SRC=/usr/local/src
+# install tcmalloc
+cd $SRC
+wget $URL
+tar zxvf $(basename $URL)
+cd ${ruby_dir}/source/distro/google-perftools-*
+./configure --prefix=$PREFIX --disable-dependency-tracking && make libtcmalloc_minimal.la || exit 2
+mkdir -p $PREFIX/lib
+rm -f $PREFIX/lib/libtcmalloc_minimal*.so*
+cp -Rpf .libs/libtcmalloc_minimal*.so* $PREFIX/lib/
+# config REE
+cd ../..
+./configure --prefix=$PREFIX --enable-mbari-api CFLAGS='-g -O2'
+sed -i.bak 's/^LIBS =\(.*\)/LIBS = \$(PRELIBS) \1/' Makefile
+make PRELIBS="-Wl,-rpath,$PREFIX/lib -L$PREFIX/lib -ltcmalloc_minimal" && make install
+cp /etc/environment /root/env.bak
+echo "PATH=/usr/local/ruby/bin:$PATH" >/etc/environment && . /etc/environment
+which ruby || exit 2
+chown -R railsdeploy:railsdeploy /usr/local/ruby
+exit 0
+}
+# install rubygems
+GEMS () {
+SRC=/usr/local/src
+cd $SRC
+gem_url=http://rubyforge.org/frs/download.php/70696/rubygems-1.3.7.tgz
+gem_ver=$(basename ${gem_url})
+gem_dir=$(echo ${gem_ver} | awk -F. 'BEGIN{OFS="."}NF-=1' )
+wget ${gem_url} && tar zxvf ${gem_ver} && cd ${gem_dir}
+/usr/local/ruby/bin/ruby setup.rb
+
+# install bundler && rails
+gem install bundler -v=1.0.18 && gem install passenger -v=3.0.7
+exit 0
+}
+# install nginx
+NGINX () {
+SRC=/usr/local/src
+cd $SRC
+nginx_url=http://nginx.org/download/nginx-1.0.11.tar.gz
+nginx_ver=$(basename ${nginx_url} )
+nginx_dir=$(echo ${nginx_ver} | awk -F. 'BEGIN{OFS="."}NF-=2' )
+# download nginx_module form-input-nginx-module lua-nginx-module ngx_devel_kit
+mkdir -pv $SRC/nginx_module && cd $SRC/nginx_module
+git clone git://github.com/calio/form-input-nginx-module.git
+git clone git://github.com/chaoslawful/lua-nginx-module.git
+git clone git://github.com/simpl/ngx_devel_kit.git
+chown -R railsdeploy:railsdeploy $SRC/nginx_module
+cd $SRC
+# install lua5.1.4
+apt-get install lua5.1 liblua5.1-0-dev unzip libcurl4-openssl-dev -y
+which lua || exit 2
+# config nginx
+apt-get install curl libpcre3 libpcre3-dev libc6-dev -y
+cd /usr/local/ruby/bin/lib/ruby/gems/1.8/gems/passenger-3.0.7/ext/nginx
+/usr/local/ruby/bin/rake nginx RELEASE=yes
+cd $SRC
+wget ${nginx_url} && tar zxvf ${nginx_ver} && cd ${nginx_dir}
+./configure --prefix=/usr/local/nginx --with-http_stub_status_module --with-http_ssl_module --add-module="/usr/local/ruby/lib/ruby/gems/1.8/gems/passenger-3.0.7/ext/nginx" --add-module="/usr/local/src/nginx_module/ngx_devel_kit" --add-module="/usr/local/src/nginx_module/form-input-nginx-module" --add-module="/usr/local/src/nginx_module/lua-nginx-module" --with-http_realip_module --with-http_dav_module --with-http_gzip_static_module --with-http_flv_module   --with-cc-opt=-Wno-error&& make -j2 && make install
+exit 0
+}
+# config mysql_percona
+case "$1" in
+INIT)
+INIT
+;;
+REE)
+REE
+;;
+GEM)
+GEMS
+;;
+NGINX)
+NGINX
+;;
+all)
+INIT && REE && GEM && NGINX
+;;
+*)
+echo "Usage auto_rails INIT | REE | GEM | NGINX | all"
+esac
+exit 0
+
