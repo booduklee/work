@@ -1,0 +1,19 @@
+ root修改面膜
+  5.1  使用SET语句
+create user 'test'@'localhost';
+set password for 'test'@'localhost'=PASSWORD('mytest');
+flush privileges;
+5.2 修改user表
+update mysql.user set Password=PASSWORD('newpass') where user='test' and Host='localhost';
+5.3 使用grant语句来修改密码
+grant all on *.* to 'test'@'%' identified by 'password' with grant option;
+
+8  grant 设置权限  revoke  收回权限
+grant select on mysql.user  to 'test'@'localhost' identified by 'test' with grant option;
+
+revoke select on mysql.user from 'test'@'localhost';
+revoke all privileges grant option from 'test'@'localhost';
+查看权限
+show grants for 'username'@'hostname';
+
+
