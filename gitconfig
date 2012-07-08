@@ -1,0 +1,19 @@
+[color]
+        ui = auto
+[user]
+        name = yanghuihui
+        email = yanghuihui@tigerknows.com
+[core]
+        editor = vim
+[format]
+     pretty = oneline
+[receive]
+        denyCurrentBranch = ignore
+[merge]
+tool = vimdiff
+[alias]
+co = checkout
+br = branch
+ci = commit
+st = status
+
