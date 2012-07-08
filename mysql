@@ -1,0 +1,40 @@
+# All files in this package is subject to the GPL v2 license
+# More information is in the COPYING file in the top directory of this package.
+# Copyright (C) 2009 severalnines.com
+
+#!/bin/bash
+# chkconfig: 235 99 20
+# description: MySQL Cluster mysql server start/stop script
+basedir=/usr/local/mysql/
+mysql_datadir=/data/mysql/data/
+mycnf=/usr/local/mysql/etc/my.cnf
+libexec=/usr/local/mysql/bin
+
+nodeid=3
+
+STARTMYSQLD="$libexec/mysqld --defaults-file=$mycnf "
+
+start() {
+	$STARTMYSQLD &
+}
+
+stop() {
+	killall -15 mysqld 
+}
+
+case "$1" in 
+start)
+start
+;;
+stop)
+stop
+;;
+restart|reload)
+stop
+start
+RETVAL=$?
+;;
+*)
+echo $"Usage: $0 {start|stop|restart}"
+exit 1
+esac
