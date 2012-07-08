@@ -1,4 +1,4 @@
- root修改面膜
+ root修改密码
   5.1  使用SET语句
 create user 'test'@'localhost';
 set password for 'test'@'localhost'=PASSWORD('mytest');
