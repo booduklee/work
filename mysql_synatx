@@ -17,3 +17,19 @@ revoke all privileges grant option from 'test'@'localhost';
 show grants for 'username'@'hostname';
 
 
+暂停二进制日志功能
+SET SQL_LOG_BIN=0；
+
+grant replication slave on *.* to 'repl_user'@'192.168.198.211' identified by '123abc';
+
+ change master to 
+ master_host='', master_port=3306,
+ master_user='',master_password='',
+ master_log_file='', master_log_pos=;
+
+ --replicate-do-db=databasename  如果是多个库那么就多次调用这个参数
+ --replicate-do-table=db_name.tbl_name  如果是多个表那么就多次调用这个参数
+
+ --replicate-ignore-db=db_name   同步的时候忽略的某个库，比如默认的mysql本身的设置
+  --replicate-ignore-table=db_name.tbl_name
+   --replicate-rewrite-db=from_name->to_name    shell> mysqld --replicate-rewrite-db="olddb->newdb" 
